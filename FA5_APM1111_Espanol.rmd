@@ -1,0 +1,243 @@
+---
+title: "FA 5 – Probability and Distributions"
+author: "Amyah I. Espanol"
+output:
+  pdf_document:
+    toc: false
+    number_sections: true
+fontsize: 12pt
+geometry: margin=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**https://github.com/amyahespanol/Amyah-Espanol-Statistical-Theory-APM1111.git**
+
+# Problem 1
+
+Draw three cards in succession from a deck of 52 cards.
+Let:
+
+- $E_1$ = King on the first draw  
+- $E_2$ = King on the second draw  
+- $E_3$ = King on the third draw  
+
+## (a) $P(\overline{E_1E_2})$
+
+The expression $\overline{E_1E_2}$ gives the probabilty of the intersection where at least ONE of the first two draws are NOT a king.
+
+## (b) $P(E_1 + E_2)$
+
+The symbol $E_1 + E_2$ is the union $E_1 \cup E_2$.
+$P(E_1 + E_2)$ is the probability that a king is drawn on the first draw, OR on the second draw, OR on both.
+
+## (c) $\overline{E_1 + E_2}$
+
+This is the event that neither the first nor the second draw is a king.
+
+## (d) $P(E_3 \mid E_1\ \overline{E_2})$
+
+This represents the conditional probability that a king is drawn on the third draw,
+given that the first draw was a king and the second one was NOT.
+
+## (e) $\overline{E_1E_2E_3}$
+
+This gives the intersection $\overline{E_1} \cap \overline{E_2} \cap \overline{E_3}$, so a king is NOT drawn on all three draws.
+
+## (f) $P(E_1E_2 + E_2\ \overline{E_2})$
+
+This represents the probability that, 
+A king is drawn on both the first and second draws OR A king is NOT drawn on the second draw and a king is drawn on the third.
+
+# Problem 2
+
+## (a) Probability Distribution of $X$
+
+Three fair dice are rolled. Let $X$ be the sum of the three upper faces.
+
+The dice are independent, giving it 216 total outcomes.
+$$
+\text{Total number of outcomes} = 6^3 = 216.
+$$
+
+To determine the probability distribution of $X$, I used R.
+```{r}
+# 1. Generate all 216 possible outcomes for three dice
+dice_grid <- expand.grid(d1 = 1:6, d2 = 1:6, d3 = 1:6)
+
+# 2. Calculate the sum (X) for each outcome
+dice_grid$X <- rowSums(dice_grid)
+
+# 3. Create a frequency table
+freq_data <- as.data.frame(table(dice_grid$X))
+colnames(freq_data) <- c("x", "Frequency")
+
+# 4. Calculate probabilities
+freq_data$Probability <- as.numeric(freq_data$Frequency) / 216
+
+# 5. Markdown table
+knitr::kable(freq_data, 
+             col.names = c("Sum (x)", "Frequency", "P(X = x)"),
+             caption = "Probability Distribution of the Sum of Three Dice",
+             digits = 4)
+```
+
+Therefore, the probability distribution of $X$ is:
+$$
+P(X = x) = \frac{\text{Number of outcomes that sum to } x}{216},
+$$
+where $x = 3,4,\dots,18$.
+
+The distribution has symmetry around 10.5.
+
+## (b) Compute $P(7 \le X \le 11)$
+
+Compute:
+$$
+P(7 \le X \le 11) = P(X=7) + P(X=8) + P(X=9) + P(X=10) + P(X=11).
+$$
+```{r}
+# Compute probability
+
+prob_7_11 <- sum(freq_data$Probability[as.numeric(as.character(freq_data$x)) >= 7 & as.numeric(as.character(freq_data$x)) <= 11])
+
+prob_7_11
+```
+
+Therefore,
+$$
+P(7 \le X \le 11) = `r prob_7_11`.
+$$
+
+# Problem 3
+
+Given distribution find these probabilities.  
+
+X <- c(-10, -20, 30)
+p <- c(1/5, 3/10, 1/2)
+
+## (a) E(X)
+EX <- sum(X * p) = 7
+
+## (b) E(X^2)
+EX2 <- sum((X^2) * p) = 590
+
+## (c) Variance = E(X^2) - (E(X))^2
+VarX <- EX2 - EX^2 = 541
+
+## (d) E(X^3)
+EX3 <- sum((X^3) * p) = 10900
+
+# Problem 4
+
+In how many ways can 3 men and 3 women be seated at a round table if:
+
+Let the six people be distinct individuals.
+
+```{r problem4, echo=TRUE}
+
+# (a) No restriction: 
+# Number of circular permutations of 6 different people = (6-1)!
+a <- factorial(6-1)
+
+# (b) Two particular women must not sit together:
+# Total arrangements - arrangements where W1 and W2 sit together
+total <- a
+# keep W1 and W2 as one -> 5 people around a circle -> (5-1)!; multiply by 2
+together <- factorial(5-1) * 2
+not_together <- total - together
+
+# (c) Each woman is to be between two men (men and women alternate).
+# Number of alternating seatings, men first around the circle: (3-1)!
+# Place the 3 distinct women in the 3 gaps: 3!
+alternating <- factorial(3-1) * factorial(3)
+
+list(
+  a_no_restriction = a,
+  b_not_together = not_together,
+  c_alternating = alternating
+)
+```
+
+## (a)
+Number of arrangements with no restriction: `r a`
+
+## (b)
+Number of arrangements where two particular women are not together: `r not_together`
+
+## (c)
+Number of alternating seatings (each woman between two men): `r alternating`
+
+# Problem 5
+
+In how many ways can 2 men, 4 women, 3 boys, and 3 girls be selected from:  
+6 men, 8 women, 4 boys, 5 girls
+
+```{r problem5, echo=TRUE}
+choose <- choose
+
+# (a) No restrictions
+a_men <- choose(6,2)
+a_women <- choose(8,4)
+a_boys <- choose(4,3)
+a_girls <- choose(5,3)
+total_a <- a_men * a_women * a_boys * a_girls
+
+# (b) A particular man and a particular woman must be selected.
+
+# For men: 2 men needed total, 1 is fixed -> choose 1 from remaining 5
+b_men <- choose(5,1)
+# For women: 4 women needed total, 1 is fixed -> choose 3 from remaining 7
+b_women <- choose(7,3)
+b_boys <- a_boys
+b_girls <- a_girls
+total_b <- b_men * b_women * b_boys * b_girls
+
+list(
+  total_a = total_a,
+  total_b = total_b
+)
+```
+## (a)
+No restriction: `r total_a`
+
+## (b)
+A particular man and a particular woman must be selected: `r total_b`
+
+# Problem 6
+
+Prove that for any two events \(E_1\) and \(E_2\),
+\[
+P(E_1 + E_2) \le P(E_1) + P(E_2)
+\]
+
+---
+
+## Solution
+
+Using the Addition Rules for probabilities:
+\[
+P(E_1 + E_2) = P(E_1) + P(E_2) - P(E_1E_2)
+\]
+
+Since the probability of an intersection can't be negative,
+\[
+P(E_1E_2) \ge 0
+\]
+
+Subtracting a nonnegative number can't make the result larger, so
+\[
+P(E_1 + E_2)
+  = P(E_1) + P(E_2) - P(E_1E_2)
+  \le P(E_1) + P(E_2)
+\]
+
+Therefore,
+\[
+\boxed{P(E_1 + E_2) \le P(E_1) + P(E_2)}
+\]
+
+**Conclusion:**  
+The probability of the union of two events is always less than or equal to the sum of their probabilities.
