@@ -1,0 +1,133 @@
+---
+title: "Statistical Theory - APM111 FA 8"
+author: "Amyah Espanol"
+format: pdf
+---
+
+# Analysis of the Invisibility Cloak Dataset
+## Independent Samples t-Test
+
+### Define Variables and Hypotheses
+In this study, we are testing if an invisibility cloak leads to more mischief. 
+
+- **Participant:** Identification number of a participant.
+- **Dependent Variable:** Mischief - number of mischievous acts committed by a participant
+- **Independent Variable:** Cloak (0 = No Cloak, 1 = Cloak)
+
+**Hypotheses:**
+
+- $H_0$: $\mu_{\text{no cloak}} = \mu_{\text{cloak}}$
+
+- $H_a$: $\mu_{\text{no cloak}} \neq \mu_{\text{cloak}}$
+
+### Step 2: Load the Data
+```{python}
+import pandas as pd
+
+df = pd.read_csv('Invisibility Cloak.csv')
+print(df.head())
+
+```
+
+## Step 3: Assumption Checks
+
+Independent Samples t-test is valid when we verify the following 6 assumptions.
+
+#### Assumption 1. Continuous Dependent Variable
+The dependent variable (Mischief) is a count of how many times it was done which is measured on a continuous scale.
+
+#### Assumption 2. Categorical Independent Variable
+The independent variable (Cloak) is made of of two categorical independent groups. No Cloak (0) and Cloak (1).
+
+#### Assumption 3. Independence of Observations
+There is no relationship between the observations in each group. Each participant is assigned to only one condition which gives us the assumption of independence.
+
+#### Assumption 4. There are no extreme outliers in the distribution of dependent variable, as assessed by visual inspection of boxplot.
+```{python}
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8, 6))
+sns.boxplot(x='Cloak', y='Mischief', data=df, palette="muted",
+hue='Cloak', legend=False)
+
+plt.title('Boxplot of Mischievous Acts by Group', fontsize=14)
+plt.xticks([0, 1], ['Without Cloak', 'With Cloak'])
+plt.ylabel('Number of Mischievous Acts')
+plt.show()
+```
+
+As seen above, there are no dots located outside the whiskers of the boxplot. This shows us there are no extreme outliers.
+
+#### Assumption 5. The dependent variable is approximately normally distributed.
+
+```{python}
+from scipy import stats
+
+no_cloak = df[df['Cloak'] == 0]['Mischief']
+cloak = df[df['Cloak'] == 1]['Mischief']
+
+shapiro_no = stats.shapiro(no_cloak)
+shapiro_yes = stats.shapiro(cloak)
+
+print(f"No Cloak Group: W = {shapiro_no.statistic:.3f}, p = {shapiro_no.pvalue:.3f}")
+print(f"Cloak Group:    W = {shapiro_yes.statistic:.3f}, p = {shapiro_yes.pvalue:.3f}")
+```
+
+Both groups show $p$-values greater than $0.05$ (No Cloak: $p = .231$; Cloak: $p = .936$). Therefore, the data for both groups is normally distributed.
+
+#### Assumption 6. Homogeneity of variances. There is equality of variances between groups (Without a cloak, With a cloak) on their number of mischievous acts (Mischief), as assessed by Levene’s test of equality of variances.
+
+```{python}
+levene_results = stats.levene(no_cloak, cloak)
+
+print(f"Levene’s Test: F = {levene_results.statistic:.3f}, p = {levene_results.pvalue:.3f}")
+```
+
+Since the $p$-value ($0.609$) is greater than $0.05$, the assumption of homogeneity of variance is met.
+
+## Computation T-Test
+```{python}
+from scipy import stats
+
+no_cloak = df[df['Cloak'] == 0]['Mischief']
+cloak = df[df['Cloak'] == 1]['Mischief']
+
+desc_stats = df.groupby('Cloak')['Mischief'].agg(['count', 'mean', 'std', 'sem']).rename(
+    columns={'count': 'N', 'mean': 'Mean', 'std': 'Std. Deviation', 'sem': 'Std. Error Mean'}
+)
+print("Descriptive Statistics:")
+print(desc_stats)
+
+t_stat, p_val = stats.ttest_ind(no_cloak, cloak, equal_var=True)
+df_value = len(df) - 2
+mean_diff = no_cloak.mean() - cloak.mean()
+
+print("\nIndependent Samples Test Results:")
+print(f"t-value: {t_stat:.3f}")
+print(f"df: {df_value}")
+print(f"p-value: {p_val:.3f}")
+print(f"Mean Difference: {mean_diff:.3f}")
+```
+
+The group wearing an invisibility cloak ($M = 5.00, SD = 1.65$) performed more mischievous acts than the group without a cloak ($M = 3.75, SD = 1.91$). However, this difference of $-1.25$ was not statistically significant, $t(22) = -1.713, p = .101$. 
+
+#### Null Hypothesis
+
+$H_0$: $\mu_{\text{no cloak}} = \mu_{\text{cloak}}$
+
+Based on these results, we can't fully reject the null hypothesis. There is not enough statistical evidence to suggest that wearing an invisibility cloak significantly increases the number of mischievous acts committed.
+
+# APA REPORT - Results of Independent Samples t-Test:
+An independent t-test was conducted to determine if there were differences in mischievous behavior between individuals with and without an invisibility cloak.
+
+## Assumption Checks: 
+The data met all assumptions for a t-test. 
+Creation of a boxplot confirmed there were no extreme outliers. The dependent variable (Mischief) was normally distributed for both the "Without a cloak" group ($p = .231$) and the "With a cloak" group ($p = .936$) using a Shapiro-Wilk’s test. Also, there was homogeneity of variances using Levene’s test for equality of variances ($F(1, 22) = 0.270, p = .609$).
+
+###  Statistical Analysis:
+On average, participants wearing an invisibility cloak ($M = 5.00, SD = 1.65$) performed more mischievous acts than those in the control group without a cloak ($M = 3.75, SD = 1.91$). 
+However, this mean difference of $-1.25$ was not statistically significant, $t(22) = -1.713, p = .101$.
+
+#### Conclusion:
+Based on the results, we have can not fully reject the null hypothesis. There is no statistically significant evidence to suggest that wearing an invisibility cloak creates an increase in mischievous behavior in this data.
