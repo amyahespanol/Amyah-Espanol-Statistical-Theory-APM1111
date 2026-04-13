@@ -1,0 +1,217 @@
+---
+title: "FA 9 - The Chi-Square Test and Method of Least Squares"
+author: "Amyah Espanol"
+output:
+ pdf_document:
+   toc: false
+   number_sections: false
+fontsize: 12pt
+geometry: margin=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(knitr)
+```
+
+**Github Repository: https://github.com/amyahespanol/Amyah-Espanol-Statistical-Theory-APM1111**
+
+# Problem 1
+
+**Three coins were tossed a total of 240 times, and each time the number
+of heads turning up was observed. The results are shown in Table 1, together with the
+results expected under the hypothesis that the coins are fair. Test this hypothesis at a significance level of $\alpha = 0.05$.**
+
+## Hypothesis
+
+- $H_0$: The coins are fair (binomial distribution where $p=0.5$).
+- $H_a$: The coins are not fair.
+
+## Computate
+
+The expected frequencies for $n=3$ tosses and $p=0.5$ are calculated
+using $E_i = N \times P(X=i)$.
+$P(X=i) = \binom{3}{i}(0.5)^i(0.5)^{3-i}$.
+
+```{r}
+observed <- c(24, 108, 95, 23)
+expected <- c(30, 90, 90, 30)
+
+# Chi-square -> sum((O-E)^2 / E)
+chi_sq_val <- sum((observed - expected)^2 / expected)
+p_val <- 1 - pchisq(chi_sq_val, df = 3)
+
+data.frame(Heads = 0:3, Observed = observed, Expected = expected) |>
+ kable(caption = "Coin Tossing Frequencies")
+```
+
+## Result
+
+- $\chi^2 = `r round(chi_sq_val, 4)`$
+- $df = 3$
+- $p\text{-value} = `r round(p_val, 4)`$
+
+## Final Answer
+Since the $p\text{-value} (`r round(p_val, 4)`) > 0.05$, we can’t deny the null hypothesis.
+There is no significant change to point to the coins being unfair.
+
+# Problem 2
+
+**Table 2 shows the numbers of students in each of two classes, A and B,
+who passed and failed an examination given to both groups. Using the (a)$\alpha = 0.05$ and (b)$\alpha = 0.01$ significance levels, test the hypothesis that there is no difference between the two classes. Work the problem with and without Yates’ correction.**
+
+## Hypothesis
+
+- $H_0$: There is no difference between classes (independent).
+- $H_a$: There is a significant difference between classes.
+
+## Compute
+
+```{r}
+exam_table <- matrix(c(72, 64, 17, 23), nrow = 2,
+                    dimnames = list(Class = c("A", "B"), Result = c("Passed", "Failed")))
+
+# Without Yates' Correction
+test_no_yates <- chisq.test(exam_table, correct = FALSE)
+
+# With Yates' Correction
+test_yates <- chisq.test(exam_table, correct = TRUE)
+```
+
+## Result
+
+- Without Yates: $\chi^2 = `r round(test_no_yates$statistic, 4)`$, $p = `r round(test_no_yates$p.value, 4)`$
+- With Yates: $\chi^2 = `r round(test_yates$statistic, 4)`$, $p = `r round(test_yates$p.value, 4)`$
+
+## Final Answer
+
+Using both $\alpha = 0.05$ and $\alpha = 0.01$, the $p\text{-values}$ for both tests are greater than the significance levels. We can’t reject the null hypothesis meaning there is no significant difference between Class A and Class B.
+
+# Problem 3
+
+**Table 3 shows the relationship between hair and eye color of a sample of 200 students.**
+
+(a) Find the coefficient of contingency without and with Yates’ correction.
+
+(b) Compare the result of part (a) with the maximum coefficient of contingency.
+
+## (a) Coefficient of Contingency ($C$)
+$C = \sqrt{\frac{\chi^2}{\chi^2 + N}}$
+```{r}
+hair_eye <- matrix(c(49, 30, 25, 96), nrow = 2)
+N <- sum(hair_eye)
+
+# Without Yates
+chi_no_yates <- chisq.test(hair_eye, correct = FALSE)$statistic
+C_no_yates <- sqrt(chi_no_yates / (chi_no_yates + N))
+
+# With Yates
+chi_yates <- chisq.test(hair_eye, correct = TRUE)$statistic
+C_yates <- sqrt(chi_yates / (chi_yates + N))
+```
+- Coefficient of Contingency without Yates: `r round(C_no_yates, 4)`
+- Coefficient of Contingency with Yates: `r round(C_yates, 4)`
+
+## (b) Maximum Coefficient of Contingency
+For a $2 \times 2$ table, $C_{max} = \sqrt{\frac{k-1}{k}} = \sqrt{\frac{2-1}{2}} = \sqrt{0.5} \approx 0.7071$.
+
+Comparison: The calculated $C$ (`r round(C_no_yates, 4)`) is slightly high but a lot less than the maximum possible value of $0.7071$, which suggests a semi association between hair and eye color.
+
+# Problem 4
+
+**The mtcars dataset in R contains measurements on 32 automobiles, including miles per gallon (mpg) and weight (wt, in 1000 lbs).**
+
+(a) Using the full dataset, fit a least-squares regression line with wt as the independent variable and mpg as the dependent variable.
+
+(b) Fit a second least-squares regression line with mpg as the independent variable
+and wt as the dependent variable.
+
+(c) Plot the data points and both regression lines on the same set of coordinate axes.
+
+(d) Interpret the slope of each regression line.
+
+Instruction: Use R to load the dataset: data(mtcars)
+
+```{r}
+data(mtcars)
+# (a) wt as independent, mpg as dependent
+model1 <- lm(mpg ~ wt, data = mtcars)
+
+# (b) mpg as independent, wt as dependent
+model2 <- lm(wt ~ mpg, data = mtcars)
+```
+## (a,b,c) Plot
+
+```{r}
+plot(mtcars$wt, mtcars$mpg, pch = 19, col = "gray", xlab = "Weight (1000 lbs)", ylab = "MPG")
+abline(model1, col = "blue", lwd = 2) # part a
+
+# part b & c
+mpg_range <- seq(min(mtcars$mpg), max(mtcars$mpg), length.out = 100)
+wt_pred <- coef(model2)[1] + coef(model2)[2] * mpg_range
+lines(wt_pred, mpg_range, col = "red", lwd = 2)
+legend("topright", legend = c("mpg ~ wt", "wt ~ mpg"), col = c("blue", "red"), lwd = 2)
+```
+
+## (d)Interpret
+
+- Least-squares regression line with wt as the independent variable and mpg as the dependent variable (`r round(coef(model1)[2], 2)`): For every increase of 1,000 lbs in weight, the fuel efficiency decreases by approximately `r abs(round(coef(model1)[2], 2))` mpg.
+- Least-squares regression line with mpg as the independent variable and wt as the dependent variable (`r round(coef(model2)[2], 2)`): For every 1 mpg increase in fuel efficiency, the vehicle weight decreases by approximately `r abs(round(coef(model2)[2], 3)) * 1000` lbs.
+
+# Problem 5
+
+**The cars dataset in R contains measurements of stopping distance (dist, in feet) and speed (speed, in miles per hour) for 50 automobiles.**
+
+(a) Using the full dataset, construct a scatter plot of stopping distance($D$) against
+speed($V$).
+
+(b) Fit a least-squares quadratic model of the form $D = a_0 + a_1V + a_2V^2$.
+
+(c) On the same graph from part (a), overlay the fitted quadratic regression curve.
+
+(d) Estimate the stopping distance when $V = 45 \text{ mi/h}$ and $V = 80 \text{ mi/h}$.
+
+(e) Fit a simple linear regression model and overlay its fitted line on the same plot.
+Compare the two models based on their fit.
+
+Instruction: Use R to load the dataset: data(cars)
+
+```{r}
+data(cars)
+# quadratic model
+quad_model <- lm(dist ~ speed + I(speed^2), data = cars)
+
+# linear model
+lin_model <- lm(dist ~ speed, data = cars)
+```
+
+## (a,c,e) Scatter plot and Overlay of linear and quadratic
+
+```{r}
+plot(cars$speed, cars$dist, pch = 19, col = "darkblue", 
+     main = "Stopping Distance vs Speed", xlab = "Speed (mph)", ylab = "Distance (ft)")
+
+# Overlay linear
+abline(lin_model, col = "red", lty = 2)
+
+# Overlay quadratic
+v_vals <- seq(0, 50, length.out = 100)
+d_preds <- predict(quad_model, data.frame(speed = v_vals))
+lines(v_vals, d_preds, col = "green", lwd = 2)
+
+legend("topleft", legend = c("Linear", "Quadratic"), col = c("red", "green"), lty = c(2, 1), lwd = 2)
+```
+
+## (d)Estimates
+
+```{r}
+new_speeds <- data.frame(speed = c(45, 80))
+preds <- predict(quad_model, new_speeds)
+```
+
+- Estimated distance at 45 mph: `r round(preds[1], 2)` ft
+- Estimated distance at 80 mph: `r round(preds[2], 2)` ft
+
+## Comparison of the two models
+The quadratic model is generally better for this data set. Stopping distance is related to kinetic energy ($KE = \frac{1}{2}mv^2$), which shows a squared variable with velocity. 
+Off of looks, the quadratic curve better shows the upward "bend" in the data as speed increases, whereas the linear model tends to underestimate distances at very high speeds.
