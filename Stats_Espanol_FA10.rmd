@@ -1,0 +1,183 @@
+---
+title: "FA 10 - Correlation Theory and Multiple and Partial Correlation"
+author: "Amyah Espanol"
+output:
+  pdf_document:
+    toc: false
+    number_sections: false
+fontsize: 12pt
+geometry: margin=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(knitr)
+```
+
+**GitHub Repository: https://github.com/amyahespanol/Amyah-Espanol-Statistical-Theory-APM1111.git**
+
+# Problem 1 
+
+**Find (a) $s_{Y\cdot X}$ and (b) $s_{X\cdot Y}$ for the data in Table 1 regarding Quiz Scores.**
+
+## Compute
+
+The standard error of estimate measures the scatter of data points around the regression line. For population-based theory we use $s_{Y\cdot X} = s_Y \sqrt{1-r^2}$ and $s_{X\cdot Y} = s_X \sqrt{1-r^2}$.
+
+```{r}
+x <- c(6, 5, 8, 8, 7, 6, 10, 4, 9, 7)
+y <- c(8, 7, 7, 10, 5, 8, 10, 6, 8, 6)
+
+r <- cor(x, y)
+
+# Standard deviations (population version)
+n <- length(x)
+sx <- sd(x) * sqrt((n-1)/n)
+sy <- sd(y) * sqrt((n-1)/n)
+
+# Standard error of estimate
+sy_x <- sy * sqrt(1 - r^2)
+sx_y <- sx * sqrt(1 - r^2)
+```
+
+## Results
+
+- Correlation ($r$): `r round(r, 4)`
+- $s_{Y\cdot X}$ (Regression of Y on X): `r round(sy_x, 4)`
+- $s_{X\cdot Y}$ (Regression of X on Y): `r round(sx_y, 4)`
+
+## Final Answer
+The standard error of estimate for the grade on the second quiz using the first ($s_{Y\cdot X}$) is `r round(sy_x, 4)`. However, the standard error for the first quiz using the second ($s_{X\cdot Y}$) is `r round(sx_y, 4)`.
+
+# Problem 2
+
+**The pressure dataset in R contains measurements of vapor pressure (pressure) of mercury at various temperatures (temperature).**
+
+**Instruction**: Use R to load the dataset: data(pressure)
+
+## (a) Using the full dataset, compute the correlation coefficient between temperature (X) and pressure (Y).
+
+```{r}
+data(pressure)
+# (a) correlation between temperature and pressure
+r_orig <- cor(pressure$temperature, pressure$pressure)
+```
+
+## (b) Define new variables as follows: X' = 2X + 6, Y' = 3Y - 15. Compute the correlation coefficient between X' and Y'. State whether the result is the same as in part (a), and explain why or why not.
+
+```{r}
+# (b) Transformations: X' = 2X + 6, Y' = 3Y - 15
+x_prime <- 2 * pressure$temperature + 6
+y_prime <- 3 * pressure$pressure - 15
+r_prime <- cor(x_prime, y_prime)
+```
+
+**Results**
+
+- Original $r$: `r round(r_orig, 4)`
+- Transform $r'$: `r round(r_prime, 4)`
+
+**Final Answer**
+The correlation coefficient is `r round(r_orig, 4)`. The result for the transformed variables is the same. We know the Pearson correlation coefficient doesn't change with linear transformations in the form $aX + b$ (where $a > 0$). We only scaled and shifted the data line, so the linear relationship is still the same.
+
+# Problem 3
+
+**The flights dataset in the nycflights13 R package contains information on approximately 336,000 flights departing from New York City in 2013. Two variables of interest are departure delay (dep.delay, in minutes) and arrival delay (arr.delay, in minutes).**
+
+**Instructions**: Install and load the dataset in R:
+install.packages("nycflights13")
+library(nycflights13)
+data(flights)
+
+## (a) Using the full dataset (after removing missing values), compute the correlation coefficient between departure delay (X) and arrival delay (Y).
+
+```{r}
+library(nycflights13)
+data(flights)
+
+# get rid of missing values
+flights_clean <- na.omit(flights[, c("dep_delay", "arr_delay")])
+
+# (a) correlation of X and Y
+r_flights <- cor(flights_clean$dep_delay, flights_clean$arr_delay)
+```
+
+## (b) Create new variables defined as X' = 2X + 10, Y' = 0.5Y - 5. Compute the correlation coefficient between X' and Y'.
+
+```{r}
+# (b) transformed variables correlation
+x_f_prime <- 2 * flights_clean$dep_delay + 10
+y_f_prime <- 0.5 * flights_clean$arr_delay - 5
+r_f_prime <- cor(x_f_prime, y_f_prime)
+```
+
+**Results**
+
+- Correlation (a): `r round(r_flights, 4)`
+- Correlation (b): `r round(r_f_prime, 4)`
+
+## (c) Compare your answers from parts (a) and (b). Explain why the correlation coefficient does or does not change under these transformations.
+
+The correlation coefficient for the transformed variables is equal to the first coefficient (`r round(r_flights, 4)`). This goes back to the Pearson correlation coefficient not changing with linear transformations of the form $aX + b$ and $cY + d$. 
+Both multipliers ($a=2$ and $c=0.5$) are positive. The transformation shifts and stretches the data but doesn't affect the relation of linear strength or the direction of the relationship in departure and arrival delays.
+
+## (d) Briefly interpret the strength and direction of the relationship between departure delay and arrival delay.
+
+The correlation coefficient of approximately 0.91 tells us it is a positive relationship. This means that when departure delays increase, arrival delays also tend to increase. There is also a very strong relationship because the value is close to 1.0. So departure delay is an reliable predictor of arrival delay, and time is rarely made up during the flight if you take off late.
+
+# Problem 4
+
+**Flight arrival delay is influenced by several factors related to departure conditions and flight characteristics. The flights dataset in the nycflights13 R package contains information on approximately 336,000 flights departing from New York City in 2013.**
+
+Let $Y$ denote the arrival delay in minutes. The independent variables are:
+
+$X_1 = \begin{cases} 0, & \text{on time or early} \\ 1, & \text{delayed departure} \end{cases}$
+$X_2 = \text{departure delay (minutes)}$
+$X_3 = \text{air time (minutes)}$
+$X_4 = \text{distance (miles)}$
+$X_5 = \text{departure hour}$
+$X_6 = \begin{cases} 0, & \text{not a major carrier} \\ 1, & \text{major carrier} \end{cases}$
+
+## (a) Using the full dataset (after removing missing values), fit a multiple linear regresion model of Y on $X_1, X_2, . . . , X_6$.
+
+```{r}
+# common US majors carriers
+major_carriers <- c("AA", "DL", "UA", "WN", "US")
+
+# clean dataset
+f_reg <- na.omit(flights[, c("arr_delay", "dep_delay", "air_time", 
+                             "distance", "hour", "carrier")])
+
+f_reg$X1 <- as.numeric(f_reg$dep_delay > 0)
+f_reg$X2 <- f_reg$dep_delay
+f_reg$X3 <- f_reg$air_time
+f_reg$X4 <- f_reg$distance
+f_reg$X5 <- f_reg$hour
+f_reg$X6 <- as.numeric(f_reg$carrier %in% major_carriers)
+
+# (a) regression model
+model_flights <- lm(arr_delay ~ X1 + X2 + X3 + X4 + X5 + X6, data = f_reg)
+m_sum <- summary(model_flights)
+coeffs <- coef(model_flights)
+```
+
+## (b) Write the estimated regression equation.
+
+$$ \hat{Y} = `r round(coeffs[1], 3)` + (`r round(coeffs[2], 3)`)X_1 + `r round(coeffs[3], 3)` X_2 + `r round(coeffs[4], 3)` X_3 + (`r round(coeffs[5], 3)`) X_4 + `r round(coeffs[6], 3)` X_5 + (`r round(coeffs[7], 3)`) X_6 $$
+
+## (c) Interpret the coefficient of $X_2$ (departure delay).
+
+The coefficient for $X_2$ is `r round(coeffs[3], 3)`. This means that for every additional minute of departure delay, the arrival delay is expected to increase by approximately `r round(coeffs[3], 3)` minutes, holding all other variables constant.
+
+## (d) Test whether at least one predictor is significantly related to Y at the 0.05 significance level.
+
+- $H_0: \beta_1 = \beta_2 = \dots = \beta_6 = 0$
+- $H_a: \text{At least one } \beta_i \neq 0$
+
+**Result**: The F-statistic is very large with a $p\text{-value} < 2.2 \times 10^{-16}$. We can't prove wrong the null hypothesis, so at least one predictor is significantly related to arrival delay.
+
+## (e) Compute and interpret the coefficient of determination $R^2$.
+
+The $R^2$ value is `r round(m_sum$r.squared, 4)`. This indicates that approximately `r round(m_sum$r.squared * 100, 2)`% of the variation in flight arrival delays can be explained by the six independent variables in this model.
+
+
